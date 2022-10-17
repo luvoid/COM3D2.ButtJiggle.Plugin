@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <StartAction>Program</StartAction>
+    <ProjectGuid>{21D55085-3997-4A44-B09B-2B1735CA6D2A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <PlatformTarget>x64</PlatformTarget>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>COM3D2.ButtJiggle</RootNamespace>
+    <AssemblyName>COM3D2.ButtJiggle.Plugin</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <COM3D2InstallPath>C:\DJN\KISS\COM3D2</COM3D2InstallPath>
+    <OutputPath>bin\$(Configuration)\$(Platform)</OutputPath>
+    <StartProgram>$(COM3D2InstallPath)\COM3D2x64.exe</StartProgram>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RestoreSources>$(RestoreSources);https://nuget.bepinex.dev/v3/index.json</RestoreSources>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="COM3D2.GameLibs" Version="2.13.0-r.0" targetFramework="net35" />
+    <PackageReference Include="UnityEngine" Version="5.6.1" targetFramework="net35" />
+    <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" targetFramework="net35" developmentDependency="true">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="BepInEx.BaseLib" Version="5.4.19" targetFramework="net35" />
+    <PackageReference Include="BepInEx.Core" Version="5.4.19" targetFramework="net35" />
+    <PackageReference Include="HarmonyX" Version="2.7.0" targetFramework="net35" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.4" targetFramework="net35" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="21.12.13.1" targetFramework="net35" />
+    <PackageReference Include="MonoMod.Utils" Version="21.12.13.1" targetFramework="net35" />
+    <PackageReference Include="UniverseLib.Analyzers" Version="1.0.3" targetFramework="net35" developmentDependency="true">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="UniverseLib.Mono" Version="1.3.3" targetFramework="net35" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <PropertyGroup>
+    <ReferencePath>$(ReferencePath);$(COM3D2InstallPath)\BepinEx\plugins</ReferencePath>
+    <ReferencePath>$(ReferencePath);$(COM3D2InstallPath)\Sybaris</ReferencePath>
+    <ReferencePath>$(ReferencePath);$(COM3D2InstallPath)\Sybaris\UnityInjector</ReferencePath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="ButtJiggleUI.cs" />
+    <Compile Include="JiggleBoneHelper.cs" />
+    <Compile Include="BoneMorph_Patch.cs" />
+    <Compile Include="JiggleBoneOverride.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ButtJiggle.cs" />
+    <Compile Include="TBodyPatch.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+      rd "$(COM3D2InstallPath)\BepinEx\plugins\vsout_$(ProjectName)"
+      mklink /J "$(COM3D2InstallPath)\BepinEx\plugins\vsout_$(ProjectName)" .
+    </PostBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
