@@ -32,7 +32,10 @@ namespace COM3D2.ButtJiggle
 
 		void OnUIUpdate()
 		{
-			// Usually not needed
+			// Allows the UI to be visible in karaoke & VR mode
+			m_UIBase.Canvas.worldCamera = null;
+
+			// Usually nothing else is needed
 			// Don't create UI elements here, use PluginPanel instead
 		}
 
@@ -106,7 +109,7 @@ namespace COM3D2.ButtJiggle
 		public override int MinWidth => 100;
 		public override int MinHeight => 200;
 		public override Vector2 DefaultAnchorMin => new(0.25f, 0.25f);
-		public override Vector2 DefaultAnchorMax => new(0.75f, 0.75f);
+		public override Vector2 DefaultAnchorMax => DefaultAnchorMin;
 		public override bool CanDragAndResize => true;
 
 		protected override void OnClosePanelClicked()
@@ -116,8 +119,10 @@ namespace COM3D2.ButtJiggle
 
 		protected override void ConstructPanelContent()
 		{
-			Text myText = UIFactory.CreateLabel(ContentRoot, "myText", "Hello world");
-			UIFactory.SetLayoutElement(myText.gameObject, minWidth: 200, minHeight: 25);
+			//Text myText = UIFactory.CreateLabel(ContentRoot, "myText", "Hello world");
+			//UIFactory.SetLayoutElement(myText.gameObject, minWidth: 200, minHeight: 25);
+
+			CreateControl(ContentRoot, "Debug Mode", get: () => JiggleBoneHelper.DebugMode, set: (value) => JiggleBoneHelper.DebugMode = value);
 
 			var overrideColumn = UIFactory.CreateVerticalGroup(ContentRoot, "overrides", false, false, true, true, childAlignment: TextAnchor.UpperLeft);
 			UIFactory.SetLayoutElement(overrideColumn, minWidth: 200, minHeight: 25);

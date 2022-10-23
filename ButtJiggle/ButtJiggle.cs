@@ -55,7 +55,7 @@ namespace COM3D2.ButtJiggle
 		// The name of this plugin.
 		public const string PLUGIN_NAME = "Butt Jiggle";
 		// The version of this plugin.
-		public const string PLUGIN_VERSION = "0.5";
+		public const string PLUGIN_VERSION = "0.6";
 	}
 }
 
@@ -92,8 +92,13 @@ namespace COM3D2.ButtJiggle
 			KeyboardShortcut hotkey = new KeyboardShortcut(KeyCode.A, KeyCode.LeftControl);
 			UIHotkey = Config.Bind("UI", "Toggle", hotkey, "Recomend using Ctrl A for 'Ass'");
 
+			Logger.LogInfo("Patching ButtJiggle");
 			Harmony.CreateAndPatchAll(typeof(ButtJiggle));
+			
+			Logger.LogInfo("Patching TBodyPatch");
 			Harmony.CreateAndPatchAll(typeof(TBodyPatch));
+
+			Logger.LogInfo("Patching BoneMorph_Patch");
 			Harmony.CreateAndPatchAll(typeof(BoneMorph_Patch));
 
 			Logger.LogInfo("Finished patching");
