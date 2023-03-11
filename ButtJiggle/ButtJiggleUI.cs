@@ -106,8 +106,8 @@ namespace COM3D2.ButtJiggle
 		public PluginPanel(UIBase owner) : base(owner) { }
 
 		public override string Name => PluginInfo.PLUGIN_NAME;
-		public override int MinWidth => 100;
-		public override int MinHeight => 200;
+		public override int MinWidth => 400;
+		public override int MinHeight => 500;
 		public override Vector2 DefaultAnchorMin => new(0.25f, 0.25f);
 		public override Vector2 DefaultAnchorMax => DefaultAnchorMin;
 		public override bool CanDragAndResize => true;
@@ -125,7 +125,7 @@ namespace COM3D2.ButtJiggle
 			CreateControl(ContentRoot, "Debug Mode", get: () => JiggleBoneHelper.DebugMode, set: (value) => JiggleBoneHelper.DebugMode = value);
 
 			var overrideColumn = UIFactory.CreateVerticalGroup(ContentRoot, "overrides", false, false, true, true, childAlignment: TextAnchor.UpperLeft);
-			UIFactory.SetLayoutElement(overrideColumn, minWidth: 200, minHeight: 25);
+			UIFactory.SetLayoutElement(overrideColumn, minWidth: 300, minHeight: 300);
 			{
 				CreateControl(overrideColumn, "Use Global Override",
 					get: () => JiggleBoneHelper.UseGlobalOverride,
@@ -145,7 +145,6 @@ namespace COM3D2.ButtJiggle
 				CreateControl(overrideColumn, "Enable Scale X"    , get: () => JiggleBoneHelper.GlobalOverride.EnableScaleX    , set: (value) => JiggleBoneHelper.GlobalOverride.EnableScaleX     = value);
 				CreateControl(overrideColumn, "Limit Rotation"    , get: () => JiggleBoneHelper.GlobalOverride.LimitRotation   , set: (value) => JiggleBoneHelper.GlobalOverride.LimitRotation    = value);
 				CreateControl(overrideColumn, "Limit Rot Decay"   , get: () => JiggleBoneHelper.GlobalOverride.LimitRotDecay   , set: (value) => JiggleBoneHelper.GlobalOverride.LimitRotDecay    = value);
-				CreateControl(overrideColumn, "Test Control"      , get: () => JiggleBoneHelper.GlobalOverride.ClothedStiffness.Value, set: (value) => JiggleBoneHelper.GlobalOverride.ClothedStiffness.Value = value);
 			}
 		}
 

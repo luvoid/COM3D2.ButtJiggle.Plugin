@@ -2,7 +2,7 @@
 
 namespace COM3D2.ButtJiggle
 {
-		public struct JiggleBoneOverride
+	public struct JiggleBoneOverride
 	{
 		public Override<float    > BlendValue      ;
 		public Override<float    > BlendValue2     ;

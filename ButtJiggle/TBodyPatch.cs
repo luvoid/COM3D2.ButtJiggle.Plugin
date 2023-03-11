@@ -38,8 +38,8 @@ namespace COM3D2.ButtJiggle
 
 			if (hipL == null || hipR == null) return;
 
-			var jbhHipL = JiggleBoneHelper.CreateFromBone(hipL);
-			var jbhHipR = JiggleBoneHelper.CreateFromBone(hipR);
+			var jbhHipL = JiggleBoneHelper.CreateFromBone(hipL, __instance);
+			var jbhHipR = JiggleBoneHelper.CreateFromBone(hipR, __instance);
 
 			__instance.Hip_L = jbhHipL.transform;
 			__instance.Hip_R = jbhHipR.transform;
@@ -64,14 +64,14 @@ namespace COM3D2.ButtJiggle
 
 			if (tag == "HipYawaraka")
 			{
-				jbhHipL.JiggleBone.m_fMuneYawaraka = f;
-				jbhHipR.JiggleBone.m_fMuneYawaraka = f;
+				jbhHipL.Jiggle.m_fMuneYawaraka = f;
+				jbhHipR.Jiggle.m_fMuneYawaraka = f;
 			}
 			if (tag == "koshi")
 			{
 				ButtJiggle.Logger.LogInfo($"koshi = {f}");
-				jbhHipL.JiggleBone.BlendValue = Mathf.Clamp(f + .5f, 0f, 1.5f);
-				jbhHipR.JiggleBone.BlendValue = Mathf.Clamp(f + .5f, 0f, 1.5f);
+				jbhHipL.Jiggle.BlendValue = Mathf.Clamp(f + .5f, 0f, 1.5f);
+				jbhHipR.Jiggle.BlendValue = Mathf.Clamp(f + .5f, 0f, 1.5f);
 			}
 		}
 
@@ -80,8 +80,8 @@ namespace COM3D2.ButtJiggle
 		{
 			if (!__instance.TryGetHipHelpers(out var jbhHipL, out var jbhHipR)) return;
 
-			jbhHipL.JiggleBone.boBRA = !__instance.boVisible_XXX;
-			jbhHipR.JiggleBone.boBRA = !__instance.boVisible_XXX;
+			jbhHipL.Jiggle.boBRA = !__instance.boVisible_XXX;
+			jbhHipR.Jiggle.boBRA = !__instance.boVisible_XXX;
 		}
 
 		[HarmonyPrefix, HarmonyPatch(nameof(TBody.WarpInit))]
@@ -89,8 +89,8 @@ namespace COM3D2.ButtJiggle
 		{
 			if (!__instance.TryGetHipHelpers(out var jbhHipL, out var jbhHipR)) return;
 
-			jbhHipL.JiggleBone.boWarpInit = true;
-			jbhHipR.JiggleBone.boWarpInit = true;
+			jbhHipL.Jiggle.boWarpInit = true;
+			jbhHipR.Jiggle.boWarpInit = true;
 		}
 	}
 }
