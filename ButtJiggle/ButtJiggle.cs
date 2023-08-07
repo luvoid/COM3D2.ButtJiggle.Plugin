@@ -51,7 +51,7 @@ namespace COM3D2.ButtJiggle
 		// The name of this plugin.
 		public const string PLUGIN_NAME = "Butt Jiggle";
 		// The version of this plugin.
-		public const string PLUGIN_VERSION = "0.11";
+		public const string PLUGIN_VERSION = "0.12";
 	}
 }
 
@@ -107,7 +107,7 @@ namespace COM3D2.ButtJiggle
 			ButtJiggle_Enabled = Config.Bind("ButtJiggle", "Enabled", true);
 			ButtJiggle_DefaultSoftness_Hip    = Config.Bind("ButtJiggle", "DefaultSoftness.Hip"   , MaidJiggleOverride.Default.HipOverride.Softness.Value);
 			ButtJiggle_DefaultSoftness_Pelvis = Config.Bind("ButtJiggle", "DefaultSoftness.Pelvis", MaidJiggleOverride.Default.PelvisOverride.Softness.Value);
-			if (ButtJiggle_ConfigVersion.Value < 1.11)
+			if (ButtJiggle_ConfigVersion.Value < 0.11)
 			{
 				ButtJiggle_DefaultSoftness_Pelvis.Value = MaidJiggleOverride.Default.PelvisOverride.Softness.Value;
 			}
@@ -158,7 +158,7 @@ namespace COM3D2.ButtJiggle
 			//GlobalOverride_Json     = Config.Bind("Global Override", "Json"   , defaultJson, "The jiggle settings in JSON format"       );
 			GlobalOverride_Settings = Config.BindJson("GlobalOverride", "Settings", MaidJiggleOverride.Default, "The settings used for the global override");
 
-			if (ButtJiggle_ConfigVersion.Value < 1.11)
+			if (ButtJiggle_ConfigVersion.Value < 0.11)
 			{
 				GlobalOverride_Settings.Value = MaidJiggleOverride.Default;
 			}
