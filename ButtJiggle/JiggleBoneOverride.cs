@@ -1,7 +1,12 @@
 ﻿using System;
+using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace COM3D2.ButtJiggle
 {
+	using static OverrideExtensions;
+
+	[JsonObject]
 	public struct JiggleBoneOverride
 	{
 		public Override<float    > BlendValue      ;
@@ -22,7 +27,8 @@ namespace COM3D2.ButtJiggle
 		public Override<float    > LimitRotation   ;
 		public Override<float    > LimitRotDecay   ;
 		
-		public static JiggleBoneOverride None = new JiggleBoneOverride()
+		[JsonIgnore] 
+		public static readonly JiggleBoneOverride Default = new JiggleBoneOverride()
 		{
 			BlendValue       = DefaultValue(1f), 
 			BlendValue2      = DefaultValue(1f), 
@@ -30,7 +36,7 @@ namespace COM3D2.ButtJiggle
 			ClothedStiffness = DefaultValue(new Stiffness(0.070f, 0.27f)), 
 			NakedStiffness   = DefaultValue(new Stiffness(0.055f, 0.22f)), 
 			Softness         = DefaultValue(0.5f), 
-			UpDown           = DefaultValue(30f), 
+			UpDown           = DefaultValue(0f), 
 			Yori             = DefaultValue(0f), 
 			SquashAndStretch = DefaultValue(true), 
 			SideStretch      = DefaultValue(-0.2f),
@@ -40,6 +46,24 @@ namespace COM3D2.ButtJiggle
 			LimitRotDecay    = DefaultValue(0.8f),
 
 		};
+
+		public JiggleBoneOverride(JiggleBoneOverride toCopy)
+		{
+			BlendValue       = toCopy.BlendValue      ; 
+			BlendValue2      = toCopy.BlendValue2     ; 
+			Gravity          = toCopy.Gravity         ; 
+			ClothedStiffness = toCopy.ClothedStiffness; 
+			NakedStiffness   = toCopy.NakedStiffness  ; 
+			Softness         = toCopy.Softness        ; 
+			UpDown           = toCopy.UpDown          ; 
+			Yori             = toCopy.Yori            ; 
+			SquashAndStretch = toCopy.SquashAndStretch; 
+			SideStretch      = toCopy.SideStretch     ; 
+			FrontStretch     = toCopy.FrontStretch    ; 
+			EnableScaleX     = toCopy.EnableScaleX    ; 
+			LimitRotation    = toCopy.LimitRotation   ;
+			LimitRotDecay    = toCopy.LimitRotDecay   ;
+		}
 
 		public static JiggleBoneOverride From(jiggleBone jb)
 		{
@@ -76,87 +100,6 @@ namespace COM3D2.ButtJiggle
 			jb.m_bEnableScaleX  = this.EnableScaleX    .AssignToIfEnabled(ref jb.m_bEnableScaleX );
 			jb.m_fLimitRot      = this.LimitRotation   .AssignToIfEnabled(ref jb.m_fLimitRot     );
 			jb.m_fLimitRotDecay = this.LimitRotDecay   .AssignToIfEnabled(ref jb.m_fLimitRotDecay);
-		}
-
-
-		public static Override<T> DefaultValue<T>(T value)
-		{
-			return new Override<T>()
-			{
-				Enabled = false,
-				Value = value,
-			};
-		}
-	}
-
-	public struct Override<T>
-	{
-		public bool Enabled;
-		public T Value;
-
-		public T AssignToIfEnabled(ref T field)
-		{
-			if (Enabled) field = Value;
-			return Enabled ? Value : field;
-		}
-
-		public static implicit operator Override<T>(T value)
-		{
-			return new Override<T>()
-			{
-				Enabled = true,
-				Value = value,
-			};
-		}
-	}
-
-	public struct Stiffness
-	{
-		public float Min;
-		public float Max;
-
-		public Stiffness(float min, float max)
-		{
-			Min = min;
-			Max = max;
-		}
-
-		public void CopyTo(float[] floats)
-		{
-			if (floats.Length < 2) throw new ArgumentException();
-			floats[1] = Min;
-			floats[0] = Max;
-		}
-
-		public static implicit operator Stiffness(float[] floats)
-		{
-			if (floats.Length < 2) throw new ArgumentException();
-			return new Stiffness(floats[1], floats[0]);
-		}
-
-		public static explicit operator float[](Stiffness stiffness)
-		{
-			float[] floats = new float[2];
-			stiffness.CopyTo(floats);
-			return floats;
-		}
-
-		public static explicit operator UnityEngine.Vector2(Stiffness stiffness)
-		{
-			return new UnityEngine.Vector2(stiffness.Min, stiffness.Max);
-		}
-
-		public static explicit operator Stiffness(UnityEngine.Vector2 vector)
-		{
-			return new Stiffness(vector.x, vector.y);
-		}
-	}
-	public static class StiffnessExtensions
-	{
-		public static float[] AssignToIfEnabled(this Override<Stiffness> stiffnessOverride, ref float[] floats)
-		{
-			if (stiffnessOverride.Enabled) stiffnessOverride.Value.CopyTo(floats);
-			return stiffnessOverride.Enabled ? (float[])stiffnessOverride.Value : floats;
 		}
 	}
 }

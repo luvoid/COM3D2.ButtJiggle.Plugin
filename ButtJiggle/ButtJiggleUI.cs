@@ -1,12 +1,13 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
-using System.Reflection;
-using System.Reflection.Emit;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using UniverseLib;
 using UniverseLib.UI;
+using UniverseLib.UI.Models;
 using UniverseLib.UI.Panels;
 using UniverseLib.Utility;
 
@@ -72,7 +73,7 @@ namespace COM3D2.ButtJiggle
 			UniverseLib.Config.UniverseLibConfig config = new()
 			{
 				Force_Unlock_Mouse = true,
-				Allow_UI_Selection_Outside_UIBase = false,
+				Allow_UI_Selection_Outside_UIBase = true,
 				Disable_EventSystem_Override = false,
 				Disable_Fallback_EventSystem_Search = false,
 			};
@@ -119,159 +120,96 @@ namespace COM3D2.ButtJiggle
 
 		protected override void ConstructPanelContent()
 		{
+			try
+			{
+				SafeConstructPanelContent();
+			}
+			catch (System.Exception ex)
+			{
+				ButtJiggle.Logger.LogError(ex);
+			}
+		}
+
+		protected void SafeConstructPanelContent()
+		{
 			//Text myText = UIFactory.CreateLabel(ContentRoot, "myText", "Hello world");
 			//UIFactory.SetLayoutElement(myText.gameObject, minWidth: 200, minHeight: 25);
 
-			CreateControl(ContentRoot, "Debug Mode", get: () => JiggleBoneHelper.DebugMode, set: (value) => JiggleBoneHelper.DebugMode = value);
+			UIControlFactory.CreateControl(ContentRoot, "Debug Mode", get: () => JiggleBoneHelper.DebugMode, set: (value) => JiggleBoneHelper.DebugMode = value);
 
 			var overrideColumn = UIFactory.CreateVerticalGroup(ContentRoot, "overrides", false, false, true, true, childAlignment: TextAnchor.UpperLeft);
 			UIFactory.SetLayoutElement(overrideColumn, minWidth: 300, minHeight: 300);
 			{
-				CreateControl(overrideColumn, "Use Global Override",
+				UIControlFactory.CreateControl(overrideColumn, "Use Global Override",
 					get: () => JiggleBoneHelper.UseGlobalOverride,
-					set: (value) => JiggleBoneHelper.UseGlobalOverride = value);
+					set: (value) => { JiggleBoneHelper.UseGlobalOverride = value; OnGlobalOverrideUIUpdated(); },
+					listen: ButtJiggle.Instance.OnGlobalOverrideUpdated);
 
-				CreateControl(overrideColumn, "Blend Value"       , get: () => JiggleBoneHelper.GlobalOverride.BlendValue      , set: (value) => JiggleBoneHelper.GlobalOverride.BlendValue       = value);
-				CreateControl(overrideColumn, "Blend Value 2"     , get: () => JiggleBoneHelper.GlobalOverride.BlendValue2     , set: (value) => JiggleBoneHelper.GlobalOverride.BlendValue2      = value);
-				CreateControl(overrideColumn, "Gravity"           , get: () => JiggleBoneHelper.GlobalOverride.Gravity         , set: (value) => JiggleBoneHelper.GlobalOverride.Gravity          = value);
-				CreateControl(overrideColumn, "Clothed Stiffness" , get: () => JiggleBoneHelper.GlobalOverride.ClothedStiffness, set: (value) => JiggleBoneHelper.GlobalOverride.ClothedStiffness = value);
-				CreateControl(overrideColumn, "Naked Stiffness"   , get: () => JiggleBoneHelper.GlobalOverride.NakedStiffness  , set: (value) => JiggleBoneHelper.GlobalOverride.NakedStiffness   = value);
-				CreateControl(overrideColumn, "Softness"          , get: () => JiggleBoneHelper.GlobalOverride.Softness        , set: (value) => JiggleBoneHelper.GlobalOverride.Softness         = value);
-				CreateControl(overrideColumn, "Up & Down"         , get: () => JiggleBoneHelper.GlobalOverride.UpDown          , set: (value) => JiggleBoneHelper.GlobalOverride.UpDown           = value);
-				CreateControl(overrideColumn, "Yori"              , get: () => JiggleBoneHelper.GlobalOverride.Yori            , set: (value) => JiggleBoneHelper.GlobalOverride.Yori             = value);
-				CreateControl(overrideColumn, "Squash & Stretch"  , get: () => JiggleBoneHelper.GlobalOverride.SquashAndStretch, set: (value) => JiggleBoneHelper.GlobalOverride.SquashAndStretch = value);
-				CreateControl(overrideColumn, "Front Stretch"     , get: () => JiggleBoneHelper.GlobalOverride.FrontStretch    , set: (value) => JiggleBoneHelper.GlobalOverride.FrontStretch     = value);
-				CreateControl(overrideColumn, "Side Stretch"      , get: () => JiggleBoneHelper.GlobalOverride.SideStretch     , set: (value) => JiggleBoneHelper.GlobalOverride.SideStretch      = value);
-				CreateControl(overrideColumn, "Enable Scale X"    , get: () => JiggleBoneHelper.GlobalOverride.EnableScaleX    , set: (value) => JiggleBoneHelper.GlobalOverride.EnableScaleX     = value);
-				CreateControl(overrideColumn, "Limit Rotation"    , get: () => JiggleBoneHelper.GlobalOverride.LimitRotation   , set: (value) => JiggleBoneHelper.GlobalOverride.LimitRotation    = value);
-				CreateControl(overrideColumn, "Limit Rot Decay"   , get: () => JiggleBoneHelper.GlobalOverride.LimitRotDecay   , set: (value) => JiggleBoneHelper.GlobalOverride.LimitRotDecay    = value);
-			}
-		}
+				List<GameObject> slotColumns = null;
 
-		private GameObject CreateControl<T>(GameObject parent, string labelText, System.Func<T> get, UnityAction<T> set = null)
-		{
-			GameObject control = null;
-			if (typeof(T) == typeof(bool)) {
-				if (get is not System.Func<bool> getCasted) throw new System.ArgumentException();
-				if (set is not UnityAction<bool> setCasted) setCasted = null;
-				control = CreateBoolControl(parent, labelText, getCasted, setCasted);
-			}
-			else if (ParseUtility.CanParse(typeof(T)))
-			{
-				control = CreateParsedControl(parent, labelText, get, set);
-			}
-			else
-			{
-				var name = labelText.Replace(" ", "");
-				var errorText = UIFactory.CreateLabel(parent, $"controlError_{name}", " " + labelText);
-				errorText.text = $"{labelText} : Could not create control for type {typeof(T).Name}";
-				control = errorText.gameObject;
-				UIFactory.SetLayoutElement(control, minWidth: 200, minHeight: 25);
-			}
-			return control;
-		}
-
-		private GameObject CreateBoolControl(GameObject parent, string labelText, System.Func<bool> get, UnityAction<bool> set = null)
-		{
-			var name = "controlBool_" + labelText.Replace(" ", "");
-			var toggleRoot = UIFactory.CreateToggle(parent, name, out var toggle, out var label);
-			label.text = labelText;
-			toggle.isOn = get();
-			toggle.interactable = (set != null);
-			if (set != null)
-			{
-				toggle.onValueChanged.AddListener((value) =>
-				{
-					set(value);
-					ButtJiggle.Logger.LogInfo($"{name} = {get()}");
-				});
-			}
-			UIFactory.SetLayoutElement(toggleRoot, minWidth: 200, minHeight: 25);
-			return toggleRoot;
-		}
-
-		private GameObject CreateParsedControl<T>(GameObject parent, string labelText, System.Func<T> get, UnityAction<T> set = null)
-		{
-			var name = labelText.Replace(" ", "");
-			var row = UIFactory.CreateHorizontalGroup(parent, $"control{typeof(T).Name}_{name}", false, false, true, true, childAlignment: TextAnchor.MiddleLeft);
-			UIFactory.SetLayoutElement(row, minWidth: 200, minHeight: 25);
-			{
-				var inputFieldRef = UIFactory.CreateInputField(row, "input", labelText);
-				UIFactory.SetLayoutElement(inputFieldRef.GameObject, minWidth: 200, minHeight: 25);
-				inputFieldRef.Text = ParseUtility.ToStringForInput(get(), typeof(T));
-				inputFieldRef.Component.interactable = (set != null);
-				if (set != null)
-				{
-					inputFieldRef.OnValueChanged += (str) =>
+				var slotDropdownRoot = UIFactory.CreateDropdown(overrideColumn, "slotSelectDropdown", out Dropdown slotSelectDropdown, "Select a slot...", 14, 
+					(slotIndex) =>
 					{
-						if (ParseUtility.TryParse(str, typeof(T), out var newValue, out _)) {
-							set((T)newValue);
-							ButtJiggle.Logger.LogInfo($"{name} = {get()}");
+						for (int i = 0; i < slotColumns.Count; i++)
+						{
+							slotColumns[i].SetActive(i == slotIndex);
 						}
-						inputFieldRef.Text = ParseUtility.ToStringForInput(get(), typeof(T));
-					};
-				}
+					}
+				);
+				UIFactory.SetLayoutElement(slotDropdownRoot, minWidth: 300, minHeight: 25, preferredWidth: 300, preferredHeight: 25);
 
-				UIFactory.CreateLabel(row, "label", " "+labelText);
-				UIFactory.SetLayoutElement(row, minWidth: 200, minHeight: 25);
+				slotColumns = new List<GameObject>() {
+					CreateJiggleBoneOverrideColumn(overrideColumn, "Hips"  , () => ref JiggleBoneHelper.GlobalOverride.HipOverride   , OnGlobalOverrideUIUpdated, ButtJiggle.Instance.OnGlobalOverrideUpdated),
+					CreateJiggleBoneOverrideColumn(overrideColumn, "Pelvis", () => ref JiggleBoneHelper.GlobalOverride.PelvisOverride, OnGlobalOverrideUIUpdated, ButtJiggle.Instance.OnGlobalOverrideUpdated),
+				};
+
+				int i = 0;
+				slotSelectDropdown.AddOptions(
+					slotColumns.Select((go) => 
+					{ 
+						ButtJiggle.Logger.LogDebug($"Add slotSelect {go.name}");
+						go.SetActive(i++ == 0);
+						return go.name;
+					}).ToList()
+				);
+				slotSelectDropdown.RefreshShownValue();
+				slotSelectDropdown.Show();
 			}
-			return row;
 		}
 
-		private GameObject CreateControl<T>(GameObject parent, string labelText, System.Func<Override<T>> get, UnityAction<Override<T>> set = null)
+		delegate ref JiggleBoneOverride OverrideRefGetter();
+
+		private static GameObject CreateJiggleBoneOverrideColumn(
+			GameObject parent,
+			string name,
+			OverrideRefGetter refGet,
+			UnityAction onSet,
+			UnityEvent listen = null)
 		{
-			var name = labelText.Replace(" ", "");
-
-			var row = UIFactory.CreateHorizontalGroup(parent, $"controlOverride_{name}", false, false, true, true, childAlignment: TextAnchor.MiddleLeft);
-			UIFactory.SetLayoutElement(row, minWidth: 200, minHeight: 25);
+			var column = UIFactory.CreateVerticalGroup(parent, name, false, false, true, true, childAlignment: TextAnchor.UpperLeft);
+			UIFactory.SetLayoutElement(column, minWidth: 350, minHeight: 300);
 			{
-				var tempOverride = get();
-
-				var enabledRoot = UIFactory.CreateToggle(row, $"controlBool_{name}_Enabled", out var enableToggle, out var enabledLabel);
-				UIFactory.SetLayoutElement(enabledRoot, minWidth: 40, minHeight: 25, preferredWidth: 40, preferredHeight: 25);
-				enabledLabel.text = " | ";
-				enableToggle.isOn = tempOverride.Enabled;
-				enableToggle.interactable = (set != null);
-				if (set != null)
-				{
-					enableToggle.onValueChanged.AddListener((value) =>
-					{
-						tempOverride = get();
-						tempOverride.Enabled = value;
-						set(tempOverride);
-						ButtJiggle.Logger.LogInfo($"{name}.Enabled == {get().Enabled}");
-					});
-				}
-
-				System.Func<T> valueGet = () =>
-				{
-					tempOverride = get();
-					return tempOverride.Value;
-				};
-				UnityAction<T> valueSet = (set == null) ? null : (value) =>
-				{
-					tempOverride = get();
-					tempOverride.Value = value;
-					set(tempOverride);
-					ButtJiggle.Logger.LogInfo($"{name}.Value == {get().Value}");
-				};
-
-				GameObject valueControl = null;
-				if (typeof(T) == typeof(Stiffness))
-				{
-					if (valueGet is not System.Func<Stiffness> valueGetCasted) throw new System.ArgumentException();
-					if (valueSet is not UnityAction<Stiffness> valueSetCasted) valueSetCasted = null;
-
-					valueControl = CreateControl(row, labelText,
-						get: () => (Vector2)valueGetCasted(),
-						set: (value) => valueSetCasted((Stiffness)value));
-				}
-				else
-				{
-					valueControl = CreateControl(row, labelText, valueGet, valueSet);
-				}
+				UIControlFactory.CreateControl(column, "Blend Value (auto)", refGet: () => ref refGet().BlendValue      ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Blend Value 2"     , refGet: () => ref refGet().BlendValue2     ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Gravity"           , refGet: () => ref refGet().Gravity         ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Clothed Stiffness" , refGet: () => ref refGet().ClothedStiffness,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Naked Stiffness"   , refGet: () => ref refGet().NakedStiffness  ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Softness"          , refGet: () => ref refGet().Softness        ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Up & Down"         , refGet: () => ref refGet().UpDown          ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Yori"              , refGet: () => ref refGet().Yori            ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Squash & Stretch"  , refGet: () => ref refGet().SquashAndStretch,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Front Stretch"     , refGet: () => ref refGet().FrontStretch    ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Side Stretch"      , refGet: () => ref refGet().SideStretch     ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Enable Scale X"    , refGet: () => ref refGet().EnableScaleX    ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Limit Rotation"    , refGet: () => ref refGet().LimitRotation   ,  onSet, listen);
+				UIControlFactory.CreateControl(column, "Limit Rot Decay"   , refGet: () => ref refGet().LimitRotDecay   ,  onSet, listen);
 			}
-			return row;
+			return column;
+		}
+
+		private void OnGlobalOverrideUIUpdated()
+		{
+			ButtJiggle.ConfigSaveGlobalOverride();
 		}
 
 		// override other methods as desired

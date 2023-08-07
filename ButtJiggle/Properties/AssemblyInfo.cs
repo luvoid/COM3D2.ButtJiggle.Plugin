@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("ButtJiggle")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("https://github.com/luvoid/COM3D2.ButtJiggle.Plugin")]
 [assembly: AssemblyProduct("ButtJiggle")]
-[assembly: AssemblyCopyright("Copyright © 2022")]
+[assembly: AssemblyCopyright("Copyright © luvoid 2023")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("Neutral")]
 

@@ -3,25 +3,29 @@ using RenderHeads.Media.AVProVideo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using TriLib;
 using UnityEngine;
 using UnityEngine.SocialPlatforms;
-using static MathCM;
-using static RootMotion.FinalIK.IKSolver;
+using UnityEngine.UI;
+using UnityRuntimeGizmos;
 
 namespace COM3D2.ButtJiggle
 {
 	public class JiggleBoneHelper : MonoBehaviour
 	{
-		public bool IsChangeCheck = false;
 
 		[SerializeField] private TBody m_TBody;
 
 		public Transform TargetBone;
 		public jiggleBone Jiggle;
+		[field: SerializeField] public MaidJiggleOverride.Slot Slot { get; private set; }
+		[field: SerializeField] public bool IsChangeCheck { get; private set; }
 
 		public Transform JiggleBone => Jiggle.transform;
+		[SerializeField] private Transform m_JiggleOffsetBone;
+		[SerializeField] private Transform m_JiggleDefBone;
 		[SerializeField] private Transform m_JiggleSubBone;
 		[SerializeField] private Transform m_JiggleOutputBone;
 
@@ -31,67 +35,94 @@ namespace COM3D2.ButtJiggle
 
 
 		public static bool UseGlobalOverride = false;
-		public static JiggleBoneOverride GlobalOverride = JiggleBoneOverride.None;
+		public static MaidJiggleOverride GlobalOverride = MaidJiggleOverride.Default;
 
 		public static bool DebugMode = false;
-		[SerializeField] private LineRenderer[] m_LineRenderers = new LineRenderer[5];
-		[SerializeField] private SphereRenderer m_SphereRenderer;
-		private static Material m_DebugMaterial;
+		[SerializeField] private LineRenderer[] m_LineRenderers = new LineRenderer[2];
+		[SerializeField] private GizmoRenderer m_SphereRenderer;
+		[SerializeField] private Material m_DebugMaterial;
 
-		public static JiggleBoneHelper CreateFromBone(Transform targetBone, TBody tbody)
+		/// <summary>
+		/// Converts a bone to a <see cref="jiggleBone"/>, wrapping it with a <see cref="JiggleBoneHelper"/>.
+		/// </summary>
+		/// <remarks>
+		/// If possible, substitute references to the target bone with the returned <see cref="JiggleBoneHelper"/>,
+		/// so manipulation is applied to the helper instead of the target. 
+		/// Manipulations that cannot be redirected to the helper can be captured with <see cref="CheckForChanges"/>.
+		/// </remarks>
+		/// <param name="targetBone">The target bone to wrap.</param>
+		/// <param name="tbody">The body to which the helper will be assigned.</param>
+		/// <returns>The wrapping <see cref="JiggleBoneHelper"/></returns>
+		public static JiggleBoneHelper WrapBone(Transform targetBone, TBody tbody, MaidJiggleOverride.Slot slot, Quaternion? localRotation = null, bool useSubBone = true)
 		{
+			if (localRotation == null)
+				localRotation = Quaternion.identity;
 
 			var helperBone = CopyBone(targetBone, targetBone.name + "_helper");
+			var jiggleOffset = CopyBone(targetBone, targetBone.name + "_jiggleOffset");
+
 			var jiggleBone = CopyBone(targetBone, targetBone.name + "_jiggle");
-			var subBone    = CopyBone(jiggleBone, jiggleBone.name + "_sub"   );
+			jiggleBone.SetParent(jiggleOffset, true);
+			jiggleBone.localRotation = localRotation.Value;
+			
+			var jiggleDef = CopyBone(jiggleBone, jiggleBone.name + "Def");
+
+			var subBone = CopyBone(jiggleBone, jiggleBone.name + "_sub");
 			subBone.SetParent(jiggleBone, true);
 			Transform jiggleNub = jiggleBone.Find(jiggleBone.name + "_nub");
-			subBone.position = (jiggleNub != null) ? jiggleNub.position : jiggleBone.TransformPoint(Vector3.right * 0.2f);
+			subBone.position = (jiggleNub != null) ? jiggleNub.position : jiggleBone.TransformPoint(Vector3.left * 0.2f);
 			subBone.localEulerAngles = new Vector3(0, 0, 180);
-			
-			var outputBone = CopyBone(targetBone, targetBone.name + "_copy");
-			outputBone.SetParent(subBone, true);
 
 			var jb = jiggleBone.gameObject.AddComponent<jiggleBone>();
 			jb.BlendValue = 1;
 			jb.BlendValue2 = 1;
 			jb.MuneL_y = 1; //bone.name.Contains("_R") ? -1 : 1;
-			jb.boneAxis = new Vector3(-1, -1, 0).normalized;
-			jb.MuneUpDown = 30;
+			// jb.boneAxis = boneAxis;
+			jb.MuneUpDown = 0;
 			jb.MuneYori = 0;
-			jb.m_fMuneYawaraka = ButtJiggle.ButtJiggle_DefaultSoftness.Value;
+			jb.m_fMuneYawaraka = slot switch
+			{
+				MaidJiggleOverride.Slot.Hip => ButtJiggle.ButtJiggle_DefaultSoftness_Hip.Value,
+				MaidJiggleOverride.Slot.Pelvis => ButtJiggle.ButtJiggle_DefaultSoftness_Pelvis.Value,
+				_ => throw new ArgumentOutOfRangeException(nameof(slot)),
+			};
 
+			var outputBone = CopyBone(targetBone, targetBone.name + "_output");
+			outputBone.SetParent(useSubBone ? subBone : jiggleBone, true);
 
 			var helper = helperBone.gameObject.AddComponent<JiggleBoneHelper>();
 			helper.TargetBone = targetBone;
 			helper.Jiggle = jb;
+			helper.Slot = slot;
+			helper.m_JiggleOffsetBone = jiggleOffset;
+			helper.m_JiggleDefBone = jiggleDef;
 			helper.m_JiggleSubBone = subBone;
 			helper.m_JiggleOutputBone = outputBone;
 			helper.m_TBody = tbody;
 
-			if (GameMain.Instance.VRMode || true)
-			{
-				Transform hitParent = GameObject.Instantiate<GameObject>(Resources.Load<GameObject>("OVR/SphereParent"))?.transform;
-				Transform hitChild  = GameObject.Instantiate<GameObject>(Resources.Load<GameObject>("OVR/SphereChild" ))?.transform;
-				hitChild.GetComponent<SpringJoint>().connectedBody = hitParent.GetComponent<Rigidbody>();
-				hitParent.parent = helper.JiggleBone;
-				hitChild .parent = helper.JiggleBone;
-				hitParent.localPosition = helper.m_JiggleSubBone.localPosition;
-				hitChild .localPosition = helper.m_JiggleSubBone.localPosition;
-
-				helper.m_HitParent = hitParent;
-				helper.m_HitChild  = hitChild ;
-				helper.m_HitChildCollider = hitChild.GetComponent<SphereCollider>();
-				var center = new Vector3(0.3f, 0.1f, -0.7f);
-				if (targetBone.name.Contains("_R"))
-				{
-					center.x *= -1;
-				}
-				helper.m_HitChildCollider.center = center;
-			}
-
 			return helper;
 		}
+
+		public void SetCollider(Vector3 center)
+		{
+			if (m_HitParent == null)
+			{
+				Transform hitParent = GameObject.Instantiate<GameObject>(Resources.Load<GameObject>("OVR/SphereParent"))?.transform;
+				Transform hitChild = GameObject.Instantiate<GameObject>(Resources.Load<GameObject>("OVR/SphereChild"))?.transform;
+				hitChild.GetComponent<SpringJoint>().connectedBody = hitParent.GetComponent<Rigidbody>();
+				hitParent.parent = JiggleBone;
+				hitChild.parent = JiggleBone;
+				hitParent.localPosition = m_JiggleSubBone.localPosition;
+				hitChild.localPosition = m_JiggleSubBone.localPosition;
+
+				m_HitParent = hitParent;
+				m_HitChild = hitChild;
+				m_HitChildCollider = hitChild.GetComponent<SphereCollider>();
+			}
+
+			m_HitChildCollider.center = center;
+		}
+
 
 		void Start()
 		{
@@ -102,8 +133,7 @@ namespace COM3D2.ButtJiggle
 
 			if (m_HitChild != null)
 			{
-				m_SphereRenderer = m_HitChild.gameObject.AddComponent<SphereRenderer>();
-				m_SphereRenderer.Material = m_DebugMaterial;
+				m_SphereRenderer = m_HitChild.gameObject.AddComponent<GizmoRenderer>();
 			}
 		}
 
@@ -131,14 +161,14 @@ namespace COM3D2.ButtJiggle
 
 			if (IsChangeCheck) ApplyChanges();
 
-			CopyLocalTransform(this.transform, Jiggle.transform);
-			Jiggle.defQtn = this.transform.localRotation;
+			CopyLocalTransform(this.transform, m_JiggleOffsetBone);
+			Jiggle.defQtn = m_JiggleDefBone.localRotation;
 
 			if (UseGlobalOverride)
 			{
 				//ButtJiggle.Logger.LogInfo("Use Global Override!");
 				var origValues = JiggleBoneOverride.From(Jiggle);
-				GlobalOverride.ApplyTo(Jiggle);
+				GlobalOverride[Slot].ApplyTo(Jiggle);
 				Jiggle.LateUpdateSelf();
 				origValues.ApplyTo(Jiggle);
 			}
@@ -187,19 +217,41 @@ namespace COM3D2.ButtJiggle
 			targetBone.localScale = sourceBone.localScale;
 		}
 
+		/// <summary>
+		/// Check if any changes are made to the wrapped target bone 
+		/// between now and the next <see cref="ApplyChanges"/> call,
+		/// or until the next <see cref="LateUpdateSelf"> call.
+		/// </summary>
+		public void CheckForChanges()
+		{
+			CopyLocalTransformToBone();
+			IsChangeCheck = true;
+		}
+
+		/// </summary>
+		/// Apply any changes made to the wrapped target bone back to this source bone.
+		/// </summary>
+		/// <exception cref="InvalidOperationException">If changes are not currently being checked for.</exception>
 		public void ApplyChanges()
 		{
+			if (!IsChangeCheck) throw new InvalidOperationException("Not currently checking for changes");
 			CopyLocalTransformFromBone();
 			IsChangeCheck = false;
 		}
 
-		public void CopyLocalTransformToBone()
+		/// <summary>
+		/// Copies the transform of this helper bone to the target bone that it is wrapping.
+		/// </summary>
+		protected void CopyLocalTransformToBone()
 		{
 			CopyLocalTransform(this.transform, TargetBone.transform);
 			//JiggleBone.defQtn = this.transform.localRotation;
 		}
 
-		public void CopyLocalTransformFromBone()
+		/// <summary>
+		/// Copies the transform of the wrapped target bone to this helper bone.
+		/// </summary>
+		protected void CopyLocalTransformFromBone()
 		{
 			CopyLocalTransform(TargetBone.transform, this.transform);
 		}
@@ -225,16 +277,19 @@ namespace COM3D2.ButtJiggle
 			Vector3 localForward = Jiggle.boneAxis * Jiggle.targetDistance;
 			Vector3 boneForward = Jiggle.transform.TransformDirection(localForward);
 			Vector3 boneUp = Jiggle.transform.TransformDirection(Vector3.up);
-			Vector3 lookTarget = Jiggle.transform.position + boneForward;
+			Vector3 lookTarget = Jiggle.transform.position + boneForward * 0.2f;
+			Vector3 dynamicForward = Jiggle.dynamicPos - Jiggle.transform.position;
+			Vector3 dynamicTarget = dynamicForward * 0.2f + Jiggle.transform.position;
 
 			Jiggle.transform.localRotation = origRotation;
 			
-			DrawRay(0, Jiggle.transform.position, boneForward, Color.blue);
-			DrawRay(1, Jiggle.transform.position, boneUp * 0.2f, Color.green);
-			DrawRay(2, lookTarget, Vector3.up * 0.2f, Color.yellow);
-			DrawRay(3, Jiggle.dynamicPos, Vector3.up * 0.2f, Color.red);
+			RuntimeGizmos.DrawRay(Jiggle.transform.position, boneUp * 0.1f, Color.green);
+			RuntimeGizmos.DrawRay(Jiggle.transform.position, boneForward * 0.2f, Color.blue);
+			RuntimeGizmos.DrawRay(Jiggle.transform.position, dynamicForward * 0.2f, Color.red);
+			//RuntimeGizmos.DrawRay(dynamicTarget, Vector3.up * 0.1f, Color.red);
 
-			DrawBone(4, TargetBone, Color.white);
+			DrawBone(0, JiggleBone, Color.cyan);
+			DrawBone(1, TargetBone, Color.white);
 
 			if (m_HitChildCollider != null)
 			{
@@ -287,12 +342,10 @@ namespace COM3D2.ButtJiggle
 		private void DrawBone(int lineIndex, Transform bone, Color color)
 		{
 			Transform nub = bone.Find(bone.name + "_nub")?.transform;
-			Vector3 offset = (nub != null) ? nub.position - bone.position : bone.TransformDirection(Vector3.right) * 0.2f;
-			DrawRay(lineIndex, bone.position, offset, color);
-		}
-		
-		private void DrawRay(int lineIndex, Vector3 start, Vector3 dir, Color color)
-		{
+
+			Vector3 start = bone.position;
+			Vector3 dir = (nub != null) ? nub.position - bone.position : bone.TransformDirection(Vector3.left) * 0.2f;
+
 			var line = m_LineRenderers[lineIndex];
 			if (line == null)
 			{
@@ -302,12 +355,14 @@ namespace COM3D2.ButtJiggle
 
 			line.enabled = true;
 
-			line.startColor = color * 0.5f;
+			line.startColor = color;
 			line.endColor = color;
+			line.startWidth = 1f * line.widthMultiplier;
+			line.endWidth = line.startWidth / 5f * line.widthMultiplier;
 
 			line.SetPositions(new Vector3[] { start, start + dir });
 		}
-	
+
 		private void DrawSphereCollider(SphereCollider sphereCollider, Color color)
 		{
 			if (m_SphereRenderer == null)
@@ -317,9 +372,7 @@ namespace COM3D2.ButtJiggle
 			}
 
 			m_SphereRenderer.enabled = true;
-			m_SphereRenderer.Radius = sphereCollider.radius;
-			m_SphereRenderer.Center = sphereCollider.center;
-			m_SphereRenderer.Color = color;
+			m_SphereRenderer.Gizmo = RuntimeGizmos.WireSphere(sphereCollider.center, sphereCollider.radius, color);
 		}
 	}
 }

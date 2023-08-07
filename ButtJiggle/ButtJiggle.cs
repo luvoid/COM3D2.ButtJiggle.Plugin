@@ -1,24 +1,19 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
+using BepInEx.Configuration.Json;
 using BepInEx.Logging;
 using HarmonyLib;
-using MaidStatus;
-using PrivateMaidMode;
-using RootMotion;
+using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Reflection;
 using System.Security;
 using System.Security.Permissions;
-using System.Text;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
-using UniverseLib;
-using UniverseLib.Input;
-using UniverseLib.UI;
+using UnityEngine.Events;
+using static Newtonsoft.Json.JsonToken;
+
 
 
 // If there are errors in the above using statements, restore the NuGet packages:
@@ -39,8 +34,9 @@ using UniverseLib.UI;
 
 // This is the major & minor version with an asterisk (*) appended to auto increment numbers.
 [assembly: AssemblyVersion(COM3D2.ButtJiggle.PluginInfo.PLUGIN_VERSION + ".*")]
+[assembly: AssemblyFileVersion(COM3D2.ButtJiggle.PluginInfo.PLUGIN_VERSION)]
 
-// These two lines tell your plugin to not give a flying fuck about accessing private variables/classes whatever.
+// These two lines tell your plugin to not give a flying flip about accessing private variables/classes whatever.
 // It requires a publicized stubb of the library with those private objects though. 
 [module: UnverifiableCode]
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
@@ -55,7 +51,7 @@ namespace COM3D2.ButtJiggle
 		// The name of this plugin.
 		public const string PLUGIN_NAME = "Butt Jiggle";
 		// The version of this plugin.
-		public const string PLUGIN_VERSION = "0.7";
+		public const string PLUGIN_VERSION = "0.11";
 	}
 }
 
@@ -76,8 +72,21 @@ namespace COM3D2.ButtJiggle
 		private ManualLogSource _Logger => base.Logger;
 
 		internal static ConfigEntry<KeyboardShortcut> UIHotkey;
+
+
+		internal static ConfigEntry<double> ButtJiggle_ConfigVersion;
+
 		internal static ConfigEntry<bool> ButtJiggle_Enabled;
-		internal static ConfigEntry<float> ButtJiggle_DefaultSoftness;
+		internal static ConfigEntry<float> ButtJiggle_DefaultSoftness_Hip;
+		internal static ConfigEntry<float> ButtJiggle_DefaultSoftness_Pelvis;
+
+		//internal static ConfigEntry<bool> Experimental_PelvisEnabled;
+
+		internal static ConfigEntry<bool> GlobalOverride_Enabled;
+		internal static ConfigEntry<string> GlobalOverride_Json;
+		internal static ConfigEntryJson<MaidJiggleOverride> GlobalOverride_Settings;
+
+		public UnityEvent OnGlobalOverrideUpdated;
 
 		void Awake()
 		{
@@ -85,23 +94,45 @@ namespace COM3D2.ButtJiggle
 			Instance = this;
 
 			// Binds the configuration. In other words it sets your ConfigEntry var to your config setup.
-			ButtJiggle_Enabled         = Config.Bind("Butt Jiggle", "Enabled"         , true, "Description");
-			ButtJiggle_DefaultSoftness = Config.Bind("Butt Jiggle", "DefaultSoftness", 0.5f, "Description");
+			ButtJiggle_ConfigVersion = Config.Bind("ButtJiggle", "ConfigVersion", 0.0, new ConfigDescription(
+				"Do not change this",
+				null,
+				new ConfigurationManagerAttributes()
+				{
+					IsAdvanced = true,
+					ReadOnly = true,
+				}
+			));
+
+			ButtJiggle_Enabled = Config.Bind("ButtJiggle", "Enabled", true);
+			ButtJiggle_DefaultSoftness_Hip    = Config.Bind("ButtJiggle", "DefaultSoftness.Hip"   , MaidJiggleOverride.Default.HipOverride.Softness.Value);
+			ButtJiggle_DefaultSoftness_Pelvis = Config.Bind("ButtJiggle", "DefaultSoftness.Pelvis", MaidJiggleOverride.Default.PelvisOverride.Softness.Value);
+			if (ButtJiggle_ConfigVersion.Value < 1.11)
+			{
+				ButtJiggle_DefaultSoftness_Pelvis.Value = MaidJiggleOverride.Default.PelvisOverride.Softness.Value;
+			}
+
+			//Experimental_PelvisEnabled = Config.Bind("Experimental", "PelvisEnabled", false);
+
+
+			ConfigBindGlobalOverride();
 
 			// Add the keybind
 			KeyboardShortcut hotkey = new KeyboardShortcut(KeyCode.A, KeyCode.LeftControl);
-			UIHotkey = Config.Bind("UI", "Toggle", hotkey, "Recomend using Ctrl A for 'Ass'");
+			UIHotkey = Config.Bind("UI", "Toggle", hotkey, "Recommend using Ctrl A for 'Ass'");
 
-			Logger.LogInfo("Patching ButtJiggle");
+			ButtJiggle_ConfigVersion.Value = double.Parse(PluginInfo.PLUGIN_VERSION);
+
+			Logger.LogDebug("Patching ButtJiggle");
 			Harmony.CreateAndPatchAll(typeof(ButtJiggle));
 			
-			Logger.LogInfo("Patching TBodyPatch");
+			Logger.LogDebug("Patching TBodyPatch");
 			Harmony.CreateAndPatchAll(typeof(TBodyPatch));
 
-			Logger.LogInfo("Patching BoneMorph_Patch");
+			Logger.LogDebug("Patching BoneMorph_Patch");
 			Harmony.CreateAndPatchAll(typeof(BoneMorph_Patch));
 
-			Logger.LogInfo("Finished patching");
+			Logger.LogDebug("Finished patching");
 		}
 
 		void Start()
@@ -109,18 +140,58 @@ namespace COM3D2.ButtJiggle
 			Universe_Init();
 		}
 
-		private bool m_IsHotkeyHandled = false;
 		void Update()
 		{
-			if (UIHotkey.Value.IsDown() && !m_IsHotkeyHandled)
+			if (UIHotkey.Value.IsDown())
 			{
 				ToggleUI();
-				m_IsHotkeyHandled = true;
 			}
-			else if (UIHotkey.Value.IsUp())
+		}
+
+		private void ConfigBindGlobalOverride()
+		{
+			if (GlobalOverride_Enabled != null) return;
+
+			string defaultJson = SerializeGlobalOverride();
+
+			GlobalOverride_Enabled  = Config.Bind("GlobalOverride", "Enabled", false      , "Enable global override of jiggle settings");
+			//GlobalOverride_Json     = Config.Bind("Global Override", "Json"   , defaultJson, "The jiggle settings in JSON format"       );
+			GlobalOverride_Settings = Config.BindJson("GlobalOverride", "Settings", MaidJiggleOverride.Default, "The settings used for the global override");
+
+			if (ButtJiggle_ConfigVersion.Value < 1.11)
 			{
-				m_IsHotkeyHandled = false;
+				GlobalOverride_Settings.Value = MaidJiggleOverride.Default;
 			}
+
+			JiggleBoneHelper.UseGlobalOverride = GlobalOverride_Enabled.Value;
+			JiggleBoneHelper.GlobalOverride = GlobalOverride_Settings.Value;
+
+			GlobalOverride_Enabled.SettingChanged += delegate (object sender, EventArgs eventArgs)
+			{
+				JiggleBoneHelper.UseGlobalOverride = GlobalOverride_Enabled.Value;
+				OnGlobalOverrideUpdated.Invoke();
+			};
+			GlobalOverride_Settings.SettingChanged += delegate (object sender, EventArgs eventArgs)
+			{
+				JiggleBoneHelper.GlobalOverride = GlobalOverride_Settings.Value;
+				OnGlobalOverrideUpdated.Invoke();
+			};
+		}
+
+		public static void ConfigSaveGlobalOverride()
+		{
+			Logger.LogDebug("ConfigSaveGlobalOverride");
+			GlobalOverride_Enabled .Value = JiggleBoneHelper.UseGlobalOverride;
+			//GlobalOverride_Json    .Value = SerializeGlobalOverride();
+			GlobalOverride_Settings.Value = JiggleBoneHelper.GlobalOverride;
+		}
+
+		private static string SerializeGlobalOverride()
+		{
+			JsonSerializer serializer = new JsonSerializer();
+			StringWriter writer = new StringWriter();
+			serializer.Serialize(writer, JiggleBoneHelper.GlobalOverride);
+			return writer.ToString();
 		}
 	}
 }

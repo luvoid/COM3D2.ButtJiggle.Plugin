@@ -49,10 +49,10 @@
     <PackageReference Include="Mono.Cecil" Version="0.10.4" targetFramework="net35" />
     <PackageReference Include="MonoMod.RuntimeDetour" Version="21.12.13.1" targetFramework="net35" />
     <PackageReference Include="MonoMod.Utils" Version="21.12.13.1" targetFramework="net35" />
-    <PackageReference Include="UniverseLib.Analyzers" Version="1.0.3" targetFramework="net35" developmentDependency="true">
+    <PackageReference Include="UniverseLib.Analyzers" Version="1.0.4" targetFramework="net35" developmentDependency="true">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="UniverseLib.Mono" Version="1.3.3" targetFramework="net35" />
+    <PackageReference Include="UniverseLib.Mono" Version="1.5.1" targetFramework="net35" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System">
@@ -81,16 +81,28 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ButtJiggleUI.cs" />
+    <Compile Include="ConfigurationManagerAttributes.cs" />
     <Compile Include="JiggleBoneHelper.cs" />
     <Compile Include="BoneMorph_Patch.cs" />
     <Compile Include="JiggleBoneOverride.cs" />
+    <Compile Include="MaidJiggleOverride.cs" />
+    <Compile Include="Override.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ButtJiggle.cs" />
+    <Compile Include="UnityRuntimeGizmos.cs" />
     <Compile Include="SphereRenderer.cs" />
+    <Compile Include="Stiffness.cs" />
     <Compile Include="TBodyPatch.cs" />
+    <Compile Include="UIControlFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\BepInEx.Configuration.Json\BepInEx.Configuration.Json\BepInEx.Configuration.Json.csproj">
+      <Project>{ff4b6d69-d118-4506-b65e-db55555f7f13}</Project>
+      <Name>BepInEx.Configuration.Json</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
