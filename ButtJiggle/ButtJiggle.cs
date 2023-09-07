@@ -5,14 +5,13 @@ using BepInEx.Logging;
 using HarmonyLib;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Security;
 using System.Security.Permissions;
 using UnityEngine;
 using UnityEngine.Events;
-using static Newtonsoft.Json.JsonToken;
+using CM3D2.UGUI;
 
 
 
@@ -51,7 +50,7 @@ namespace COM3D2.ButtJiggle
 		// The name of this plugin.
 		public const string PLUGIN_NAME = "Butt Jiggle";
 		// The version of this plugin.
-		public const string PLUGIN_VERSION = "0.12";
+		public const string PLUGIN_VERSION = "0.13";
 	}
 }
 
@@ -133,19 +132,6 @@ namespace COM3D2.ButtJiggle
 			Harmony.CreateAndPatchAll(typeof(BoneMorph_Patch));
 
 			Logger.LogDebug("Finished patching");
-		}
-
-		void Start()
-		{
-			Universe_Init();
-		}
-
-		void Update()
-		{
-			if (UIHotkey.Value.IsDown())
-			{
-				ToggleUI();
-			}
 		}
 
 		private void ConfigBindGlobalOverride()

@@ -5,8 +5,6 @@ VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButtJiggle", "ButtJiggle\ButtJiggle.csproj", "{21D55085-3997-4A44-B09B-2B1735CA6D2A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BepInEx.Configuration.Json", "..\BepInEx.Configuration.Json\BepInEx.Configuration.Json\BepInEx.Configuration.Json.csproj", "{FF4B6D69-D118-4506-B65E-DB55555F7F13}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{21D55085-3997-4A44-B09B-2B1735CA6D2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21D55085-3997-4A44-B09B-2B1735CA6D2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21D55085-3997-4A44-B09B-2B1735CA6D2A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FF4B6D69-D118-4506-B65E-DB55555F7F13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FF4B6D69-D118-4506-B65E-DB55555F7F13}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FF4B6D69-D118-4506-B65E-DB55555F7F13}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FF4B6D69-D118-4506-B65E-DB55555F7F13}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

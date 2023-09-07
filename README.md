@@ -4,4 +4,5 @@ This plugin is in the early testing stages, but feel free to sneak a peek and [d
 
 ## Requirements
 * Requires [BepInEx 5.4](https://github.com/BepInEx/BepInEx)
-* Requires [UniverseLib 1.5.1](https://github.com/sinai-dev/UniverseLib)
+* Requires [UniverseUGUI 1.6.3-preview](https://github.com/luvoid/UniverseUGUI)
+* Requires [CM3D2.UGUI 0.1.3-preview](https://github.com/luvoid/CM3D2.UGUI)
