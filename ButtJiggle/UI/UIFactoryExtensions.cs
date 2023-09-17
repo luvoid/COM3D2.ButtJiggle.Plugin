@@ -2,7 +2,7 @@
 using UnityEngine.Events;
 using UnityEngine;
 using UniverseLib.UI;
-using UniverseLib.UI.Models.Controls;
+using UniverseLib.UI.Controls;
 using UniverseLib.Utility;
 using UnityEngine.UI;
 
@@ -23,50 +23,49 @@ namespace COM3D2.ButtJiggle.UI
 			);
 			*/
 
-			var row = create.UIObject(parent, $"Override_{propertyName}".Replace(" ", ""));
-			UIFactory.SetLayoutGroup<HorizontalLayoutGroup>(row, false, false, true, true);
-			using (create.LayoutContext(null))
+			var row = create.HorizontalGroup(parent, $"Override_{propertyName}".Replace(" ", ""));
+
+			using var _nullContext = create.LayoutContext(null);
+
+			Property valueProperty = null;
+			void onEnabledSet()
 			{
-				Property valueProperty = null;
-				void onEnabledSet()
-				{
-					valueProperty.Control.Component.interactable = refGet().Enabled;
-					onSet?.Invoke();
-				}
-				ref bool refEnabledGet()
-				{
-					ref bool enabled = ref refGet().Enabled;
-					valueProperty.Control.Component.interactable = enabled;
-					return ref enabled;
-				}
-
-				BoolControl enabledControl = create.BoolControl(row, $"{propertyName}.{nameof(Override<T>.Enabled)}", refEnabledGet, onEnabledSet, listen);
-
-				//var dividerLabel = create.Label(row, "Divider", " | ");
-
-				if (refGet is RefGetter<Override<string>> refGetOverrideString)
-				{
-					valueProperty = create.StringProperty(row, propertyName, () => ref refGetOverrideString().Value, onSet, listen);
-				}
-				else if (refGet is RefGetter<Override<bool>> refGetOverrideBool)
-				{
-					valueProperty = create.BoolProperty(row, propertyName, () => ref refGetOverrideBool().Value, onSet, listen);
-				}
-				else if (refGet is RefGetter<Override<Stiffness>> refGetOverrideStiffness)
-				{
-					valueProperty = create.ParsedProperty<Stiffness, StiffnessParser>(row, propertyName,
-						() => ref refGetOverrideStiffness().Value,
-						onSet,
-						listen
-					);
-				}
-				else
-				{
-					valueProperty = create.ParsedProperty(row, propertyName, () => ref refGet().Value, onSet, listen);
-				}
-
-				UIFactory.SetLayoutElement(valueProperty.GameObject, flexibleWidth: 1);
+				valueProperty.Control.Component.interactable = refGet().Enabled;
+				onSet?.Invoke();
 			}
+			ref bool refEnabledGet()
+			{
+				ref bool enabled = ref refGet().Enabled;
+				valueProperty.Control.Component.interactable = enabled;
+				return ref enabled;
+			}
+
+			BoolControl enabledControl = create.BoolControl(row, $"{propertyName}.{nameof(Override<T>.Enabled)}", refEnabledGet, onEnabledSet, listen);
+
+			//var dividerLabel = create.Label(row, "Divider", " | ");
+
+			if (refGet is RefGetter<Override<string>> refGetOverrideString)
+			{
+				valueProperty = create.StringProperty(row, propertyName, () => ref refGetOverrideString().Value, onSet, listen);
+			}
+			else if (refGet is RefGetter<Override<bool>> refGetOverrideBool)
+			{
+				valueProperty = create.BoolProperty(row, propertyName, () => ref refGetOverrideBool().Value, onSet, listen);
+			}
+			else if (refGet is RefGetter<Override<Stiffness>> refGetOverrideStiffness)
+			{
+				valueProperty = create.ParsedProperty<Stiffness, StiffnessParser>(row, propertyName,
+					() => ref refGetOverrideStiffness().Value,
+					onSet,
+					listen
+				);
+			}
+			else
+			{
+				valueProperty = create.ParsedProperty(row, propertyName, () => ref refGet().Value, onSet, listen);
+			}
+
+			UIFactory.SetLayoutElement(valueProperty.GameObject, flexibleWidth: 1);
 			return row;
 		}
 

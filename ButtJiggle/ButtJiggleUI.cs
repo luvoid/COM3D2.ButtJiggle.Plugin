@@ -10,6 +10,7 @@ using UniverseLib.UI.Panels;
 using COM3D2.ButtJiggle.UI;
 using UniverseLib.UI.Styles;
 using CM3D2.UGUI.Resources;
+using CM3D2.UGUI.Panels;
 
 namespace COM3D2.ButtJiggle
 {
@@ -77,19 +78,18 @@ namespace COM3D2.ButtJiggle
 		}
 	}
 
-	internal class PluginPanel : SkinnedPanelBase
+	internal class PluginPanel : CM3D2Panel
 	{
 		public PluginPanel(UIBase owner) : base(owner) { }
 
 		public override string Name => PluginInfo.PLUGIN_NAME;
-		public override int MinWidth => 400;
-		public override int MinHeight => 500;
+		public override Vector2 PreferredSize => base.PreferredSize + new Vector2(10, 10);
 		public override Vector2 DefaultAnchorMin => new(1f, 0.5f);
 		public override Vector2 DefaultAnchorMax => DefaultAnchorMin;
-		public override Vector2 DefaultPosition => new Vector2(-MinWidth - 50, MinHeight / 2);
+		public override Vector2 DefaultPosition => new Vector2(-PreferredSize.x - 50, PreferredSize.y / 2);
 		public override bool CanDragAndResize => true;
 
-		public override IReadOnlyUISkin Skin => Styles.StandardSkin;
+		private CanvasGroup globalOverrideCanvasGroup;
 
 		protected override void OnClosePanelClicked()
 		{
@@ -115,34 +115,41 @@ namespace COM3D2.ButtJiggle
 
 			Create.BoolControl(ContentRoot, "DebugMode", "Debug Mode", refGet: () => ref JiggleBoneHelper.DebugMode);
 
-			var overrideColumn = Create.UIObject(ContentRoot, "Overrides");
-			UIFactory.SetLayoutGroup<VerticalLayoutGroup>(overrideColumn, false, false, true, true); // .CreateVerticalGroup(ContentRoot, "overrides", false, false, true, true, childAlignment: TextAnchor.UpperLeft);
+			var verticalFrame = Create.VerticalFrame(ContentRoot, "Overrides");
+			var overrideColumn = verticalFrame.ContentRoot;
+			//UIFactory.SetLayoutGroup<VerticalLayoutGroup>(overrideColumn, false, false, true, true);
 			UIFactory.SetLayoutElement(overrideColumn, minWidth: 300, minHeight: 300);
 
-			//UIFactory.SetLayoutElement(slotDropdownRoot, minWidth: 300, minHeight: 25, preferredWidth: 300, preferredHeight: 25);
+			Create.BoolControl(overrideColumn, "UseGlobalOverride", "Use Global Override",
+				refGet: () =>
+				{
+					ref var value = ref JiggleBoneHelper.UseGlobalOverride;
+					globalOverrideCanvasGroup.interactable = value;
+					return ref value;
+				},
+				onSet: OnGlobalOverrideUIUpdated,
+				listenForUpdate: ButtJiggle.Instance.OnGlobalOverrideUpdated
+			);
+
+
+			var globalOverrideGroup = Create.VerticalGroup(overrideColumn, "GlobalOverrideCanvasGroup");
+			globalOverrideCanvasGroup = UIFactory.SetCanvasGroup(globalOverrideGroup, interactable: JiggleBoneHelper.UseGlobalOverride);
 			using (Create.LayoutContext(flexibleWidth: 1))
 			{
-				Create.BoolControl(overrideColumn, "UseGlobalOverride", "Use Global Override",
-					refGet: () => ref JiggleBoneHelper.UseGlobalOverride,
-					onSet: OnGlobalOverrideUIUpdated,
-					listenForUpdate: ButtJiggle.Instance.OnGlobalOverrideUpdated
-				);
-
 				List<GameObject> slotColumns = null;
 
-				var slotDropdown = Create.Dropdown(overrideColumn, "SlotSelectDropdown", 
-					(slotIndex) =>
+				var slotDropdown = Create.Dropdown(globalOverrideGroup, "SlotSelectDropdown");
+				slotDropdown.OnValueChanged += (slotIndex) =>
+				{
+					for (int i = 0; i < slotColumns.Count; i++)
 					{
-						for (int i = 0; i < slotColumns.Count; i++)
-						{
-							slotColumns[i].SetActive(i == slotIndex);
-						}
+						slotColumns[i].SetActive(i == slotIndex);
 					}
-				);
+				};
 
 				slotColumns = new List<GameObject>() {
-					CreateJiggleBoneOverrideColumn(overrideColumn, "Hips"  , () => ref JiggleBoneHelper.GlobalOverride.HipOverride   , OnGlobalOverrideUIUpdated, ButtJiggle.Instance.OnGlobalOverrideUpdated),
-					CreateJiggleBoneOverrideColumn(overrideColumn, "Pelvis", () => ref JiggleBoneHelper.GlobalOverride.PelvisOverride, OnGlobalOverrideUIUpdated, ButtJiggle.Instance.OnGlobalOverrideUpdated),
+					CreateJiggleBoneOverrideColumn(globalOverrideGroup, "Hips"  , () => ref JiggleBoneHelper.GlobalOverride.HipOverride   , OnGlobalOverrideUIUpdated, ButtJiggle.Instance.OnGlobalOverrideUpdated),
+					CreateJiggleBoneOverrideColumn(globalOverrideGroup, "Pelvis", () => ref JiggleBoneHelper.GlobalOverride.PelvisOverride, OnGlobalOverrideUIUpdated, ButtJiggle.Instance.OnGlobalOverrideUpdated),
 				};
 
 				int i = 0;
@@ -168,9 +175,7 @@ namespace COM3D2.ButtJiggle
 			System.Action onSet,
 			UnityEvent listen = null)
 		{
-			//var column = UIFactory.CreateVerticalGroup(parent, name, false, false, true, true, childAlignment: TextAnchor.UpperLeft);
-			var column = Create.UIObject(parent, name);
-			UIFactory.SetLayoutGroup<VerticalLayoutGroup>(column, false, false, true, true); // .CreateVerticalGroup(ContentRoot, "overrides", false, false, true, true, childAlignment: TextAnchor.UpperLeft);
+			var column = Create.VerticalGroup(parent, name);
 			using (Create.LayoutContext(flexibleWidth: 1))
 			{
 				Create.OverrideProperty(column, "Blend Value (auto)", refGet: () => ref refGet().BlendValue      ,  onSet, listen);
@@ -194,6 +199,7 @@ namespace COM3D2.ButtJiggle
 		private void OnGlobalOverrideUIUpdated()
 		{
 			ButtJiggle.ConfigSaveGlobalOverride();
+			globalOverrideCanvasGroup.interactable = JiggleBoneHelper.UseGlobalOverride;
 		}
 
 		// override other methods as desired
