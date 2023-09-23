@@ -5,8 +5,8 @@ This plugin is in the early testing stages, but feel free to sneak a peek and [d
 ## Requirements
 * Requires [BepInEx 5.4](https://github.com/BepInEx/BepInEx)
 * Requires [BepInEx.Configuration.Json 0.5.0-alpha](https://github.com/luvoid/BepInEx.Configuration.Json)
-* Requires [UniverseUGUI 1.6.4-alpha.1](https://github.com/luvoid/UniverseUGUI)
-* Requires [CM3D2.UGUI 0.1.4-alpha.1](https://github.com/luvoid/CM3D2.UGUI)
+* Requires [UniverseUGUI 1.6.4-alpha.2](https://github.com/luvoid/UniverseUGUI)
+* Requires [CM3D2.UGUI 0.1.4-alpha.2](https://github.com/luvoid/CM3D2.UGUI)
 * Improved physics with [COM3D2.TimeDependentPhysics.Plugin](https://github.com/luvoid/COM3D2.TimeDependentPhysics.Plugin) (optional)
 
 ## Conflicts
