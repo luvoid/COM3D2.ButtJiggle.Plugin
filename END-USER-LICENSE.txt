@@ -1,0 +1,16 @@
+Copyright (c) luvoid 2023
+
+This software may be used freely by an end-user as a plugin or modification to
+other software (such as, but not limited to, Custom Order Maid 3D2).
+This software may also be used as a tool to create visual media, such as a photo or video,
+for the purpose of private, public, or commercial use.
+All other uses, (such as, but not limited to, use in proprietary software) are dictated by the GPLv3 License,
+unless given express permission otherwise.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
