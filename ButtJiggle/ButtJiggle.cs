@@ -60,6 +60,7 @@ namespace COM3D2.ButtJiggle
 {
 	// This is the metadata set for your plugin.
 	[BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+	[BepInDependency("COM3D2.MaidVoicePitch", BepInDependency.DependencyFlags.SoftDependency)]
 	public sealed partial class ButtJiggle : BaseUnityPlugin
 	{
 		// Static saving of the main instance. (Singleton design pattern)
