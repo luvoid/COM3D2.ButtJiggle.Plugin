@@ -50,7 +50,7 @@ namespace COM3D2.ButtJiggle
 		// The name of this plugin.
 		public const string PLUGIN_NAME = "Butt Jiggle";
 		// The version of this plugin.
-		public const string PLUGIN_VERSION = "0.14";
+		public const string PLUGIN_VERSION = "1.0";
 	}
 }
 
